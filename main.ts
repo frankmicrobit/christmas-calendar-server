@@ -1,12 +1,12 @@
 function InitQuestions () {
     question_list = [
-    "Er det 8 planeter i solsystemet vårt",
-    "Kan man se mot vest, når en står på nordpolen",
-    "Har edderkopper 8 bein",
+    "Har vi 8 planeter i solsystemet ",
+    "Er det 29 dager i februar 2050",
+    "Kan man se mot vest fra nordpolen",
+    "Har edderkopper 8 ben",
     "Renner elven Po gjennom Torino",
     "Har dromedaren to pukler",
-    "Er avokado et bær",
-    "Er det skuddår i 2050",
+    "Er ...",
     "Er dagen i dag 8",
     "Er dagen i dag 9",
     "Er dagen i dag 10",
@@ -25,7 +25,7 @@ function InitQuestions () {
     "Er dagen i dag 23",
     "Er dagen i dag 24"
     ]
-    facit_list = [
+    fasit_list = [
     1,
     0,
     1,
@@ -54,20 +54,27 @@ function InitQuestions () {
 }
 input.onButtonPressed(Button.A, function () {
     Today += -1
+    DisplayDayNumber(Today)
 })
 input.onButtonPressed(Button.B, function () {
     Today += 1
+    DisplayDayNumber(Today)
 })
 radio.onReceivedValue(function (name, value) {
     if (name == "Answer") {
         answer_list[Today - 1] = value
-        if (facit_list[Today - 1] == value) {
+        if (fasit_list[Today - 1] == value) {
             basic.showIcon(IconNames.Yes)
         } else {
             basic.showIcon(IconNames.No)
         }
+        datalogger.log(
+        datalogger.createCV("Question", Today),
+        datalogger.createCV("Answer", value),
+        datalogger.createCV("Fasit", fasit_list[Today - 1])
+        )
         basic.pause(1000)
-        basic.clearScreen()
+        DisplayDayNumber(Today)
     }
 })
 function DisplayDayNumber (num: number) {
@@ -351,22 +358,36 @@ function DisplayDayNumber (num: number) {
             `)
     }
 }
-let facit_list: number[] = []
+let TextToSend = ""
+let fasit_list: number[] = []
 let question_list: string[] = []
 let Today = 0
 let answer_list: number[] = []
+datalogger.includeTimestamp(FlashLogTimeStampFormat.Milliseconds)
+datalogger.setColumnTitles(
+"Question",
+"Answer",
+"Fasit"
+)
 radio.setGroup(24)
 InitQuestions()
 answer_list = []
 Today = RTC_DS1307.getTime(RTC_DS1307.TimeType.DAY)
 led.setBrightness(50)
 DisplayDayNumber(Today)
-loops.everyInterval(10000, function () {
+loops.everyInterval(60000, function () {
     DisplayDayNumber(Today)
     radio.sendValue("Today", Today)
     basic.pause(200)
-    radio.sendString("" + (question_list[Today - 1]))
+    TextToSend = question_list[Today - 1]
+    radio.sendValue("Length", TextToSend.length)
     basic.pause(200)
-    radio.sendNumber(facit_list[Today - 1])
+    while (TextToSend.length > 0) {
+        radio.sendString(TextToSend.substr(0, 10))
+        TextToSend = TextToSend.substr(10, TextToSend.length)
+        basic.pause(200)
+    }
+    basic.pause(200)
+    radio.sendValue("Fasit", fasit_list[Today - 1])
     basic.pause(200)
 })
